@@ -12,14 +12,8 @@ import os
 import sys
 import json
 import time
-import uuid
-import collections
-import multiprocessing
-
-PROCESSES = multiprocessing.cpu_count() - 1
-
 import asyncio
-
+import threading
 '''
 server = 'irc.chat.twitch.tv'
 port = 6667
@@ -30,11 +24,11 @@ channel = CHANGE TO #CHANNEL_NAME to what u want to run this against
 server = 'irc.chat.twitch.tv'
 port = 6667
 nickname = 'twitch_plays_val_LULW'
-token = 'yo'
+token = '#'
 channel = '#tmulvey'
 
 loop = asyncio.get_event_loop()
-queue = asyncio.Queue(loop=loop)
+queue = asyncio.Queue()
 
 #----- funcs
 def SockConn(): #deez nuts
@@ -52,23 +46,22 @@ def GetCommandsLive():
             sock.send("PONG\n".encode('utf-8'))
         
         elif len(resp) > 0:
-            print(demojize(resp))
-    return
+            # print(demojize(resp))
+            queue.put_nowait(demojize(resp))
+            queue._loop._write_to_self()
 
-# send twitch message here pogu
-async def produce():
-
-    return
-
-async def consume():
-
-    return
-
+@asyncio.coroutine
+def async_p():
+    while True:
+        resp = yield from queue.get()
+        print(resp)
 
 def main():
-    print("yo")
+    print("yo - mizkif 2020\n")
     SockConn()
-    GetCommandsLive()
+    asyncio.Task(async_p())
+    threading.Thread(target=GetCommandsLive).start()
+    loop.run_forever()
     return 
 
 #----
